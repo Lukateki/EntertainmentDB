@@ -27,7 +27,8 @@ CREATE TABLE TV_Show (
 
 CREATE TABLE Anime (
     anime_id INT PRIMARY KEY,
-    FOREIGN KEY (anime_id) REFERENCES TV_Show(tv_show_id)
+    mal_id INT UNIQUE,
+    FOREIGN KEY (anime_id) REFERENCES Entertainment(entertainment_id)
 );
 
 CREATE TABLE Season_TV_Show (
