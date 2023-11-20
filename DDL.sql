@@ -5,10 +5,9 @@ CREATE TABLE Entertainment (
     title VARCHAR(255),
     description TEXT,
     rating FLOAT,
-    content_rating_id INT,
+    content_rating_id VARCHAR(255),
     release_year INT,
-    number_of_reviews INT,
-    FOREIGN KEY (content_rating_id) REFERENCES ContentRating(rating_id)
+    number_of_reviews INT
 );
 
 CREATE TABLE Movie (
@@ -47,6 +46,7 @@ CREATE TABLE Season_Anime(
 
 CREATE TABLE Person (
     person_id INT AUTO_INCREMENT PRIMARY KEY,
+    imdb_person_id VARCHAR(255),
     name VARCHAR(100)
 );
 
@@ -106,7 +106,7 @@ CREATE TABLE MovieActor (
     movie_id  INT,
     actor_id INT,
     character_name VARCHAR(255),
-    PRIMARY KEY (movie_id , actor_id, character_name),
+    PRIMARY KEY (movie_id , actor_id),
     FOREIGN KEY (movie_id ) REFERENCES Movie(movie_id),
     FOREIGN KEY (actor_id) REFERENCES Actor(actor_id)
 );
@@ -165,6 +165,22 @@ CREATE TABLE TVShowCreator (
     PRIMARY KEY (tv_show_id , creator_id),
     FOREIGN KEY (tv_show_id ) REFERENCES TV_Show(tv_show_id ),
     FOREIGN KEY (creator_id) REFERENCES Creator(creator_id)
+);
+
+CREATE TABLE TVShowDirector (
+    tv_show_id  INT,
+    actor_id INT,
+    PRIMARY KEY (tv_show_id , actor_id),
+    FOREIGN KEY (tv_show_id ) REFERENCES TV_Show(tv_show_id ),
+    FOREIGN KEY (actor_id) REFERENCES Actor(actor_id)
+);
+
+CREATE TABLE TVShowActor (
+    tv_show_id  INT,
+    actor_id INT,
+    PRIMARY KEY (tv_show_id , actor_id),
+    FOREIGN KEY (tv_show_id ) REFERENCES TV_Show(tv_show_id ),
+    FOREIGN KEY (actor_id) REFERENCES Actor(actor_id)
 );
 
 CREATE TABLE TVShowGenre (
