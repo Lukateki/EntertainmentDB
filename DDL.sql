@@ -68,11 +68,6 @@ CREATE TABLE Creator (
     FOREIGN KEY (person_id) REFERENCES Person (person_id)
 );
 
-CREATE TABLE Author (
-    author_id INT AUTO_INCREMENT PRIMARY KEY,
-    person_id INT UNIQUE NOT NULL,
-    FOREIGN KEY (person_id) REFERENCES Person(person_id)
-);
 
 CREATE TABLE Artist (
     artist_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -218,8 +213,7 @@ CREATE TABLE TVShowLanguage (
 CREATE TABLE AnimeActor (
     anime_id INT,
     actor_id INT,
-    character_name VARCHAR(255),
-    PRIMARY KEY (anime_id , actor_id, character_name),
+    PRIMARY KEY (anime_id , actor_id),
     FOREIGN KEY (anime_id) REFERENCES Anime(anime_id),
     FOREIGN KEY (actor_id) REFERENCES Actor(actor_id)
 );
@@ -262,4 +256,12 @@ CREATE TABLE AnimeLanguage (
     PRIMARY KEY (anime_id, language_id),
     FOREIGN KEY (anime_id) REFERENCES Anime(anime_id),
     FOREIGN KEY (language_id) REFERENCES Language(language_id)
+);
+
+CREATE TABLE AnimeArtist (
+	anime_id  INT,
+	artist_id INT,
+	PRIMARY KEY (anime_id , artist_id),
+    FOREIGN KEY (anime_id ) REFERENCES Anime(anime_id ),
+    FOREIGN KEY (artist_id) REFERENCES Artist(artist_id)
 );
