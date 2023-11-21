@@ -1,0 +1,11 @@
+# Ignore data files
+/Data/*
+!/Data/country_code_to_name.csv
+!/Data/zip/
+/Data/zip/*
+
+# Ignore all tsv derived output
+/Queries/Movie_TV-DML/*
+/Queries/Anime-DML/*
+/Queries/Person-DML/*
+/Queries/AKAs-DML/*
