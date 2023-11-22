@@ -7,5 +7,9 @@
 # Ignore all tsv derived output
 /Queries/Movie_TV-DML/*
 /Queries/Anime-DML/*
+!/Queries/Anime-DML/AnimeDML.sql
 /Queries/Person-DML/*
 /Queries/AKAs-DML/*
+
+# Ignore pycache
+**/__pycache__/
