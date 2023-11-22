@@ -9,17 +9,20 @@ Description:    This tool runs a sequence of script which achieve together
 import subprocess
 import environment_setup
 import config
+from Scripts.raw_data_processing_scripts import movie_tv_dml_generator,person_dml_generator
+from Scripts import populator
 
 def main():
     
     environment_setup.setup()
+    #populator.populate(config.output_file_path['anime_output_path'],config.db_config)
+    movie_tv_dml_generator.generate_movie_tv_dml(config.data_file_path['production_dataset_path'],config.output_file_path['production_output_path'],'output_movie_tv_dml',50000)
+    populator.populate(config.output_file_path['production_output_path'],config.db_config)
+    person_dml_generator.generate_person_dml(config.db_config,config.data_file_path['person_dataset_path'],config.output_file_path['person_output_path'],'output_person_dml',50000)
+    populator.populate(config.output_file_path['person_output_path'], config.db_config)
 
-    try:
-        for script in config.scripts_to_run:
-            print(f"Executing: {script}")
-            subprocess.run(['python', script])
-    except Exception as e:
-        print(f"Error occurred while running the files: {e}")
+
+    
 
 if __name__ == "__main__":
     main()

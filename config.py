@@ -2,7 +2,7 @@ db_config = {
     'host': 'localhost',
     'user': 'root',
     'password': '',
-    'database': 'MyEntertainment',
+    'database': 'MyEntertainments',
     'port': 3306
 }
 
