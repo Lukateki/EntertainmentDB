@@ -75,7 +75,7 @@ def setup():
             # Call the download_file function if the folder length is less than 3
             retrieve_resources(link, source_folder)
 
-        for key, value in config.zip_paths:
+        for key, value in config.zip_paths.items():
 
             if key == 'title.basics.tsv.gz':
                 decompress_and_rename(config.zip_paths['input'] + key, 'imdb.tsv', config.zip_paths['output'])
@@ -86,7 +86,7 @@ def setup():
             elif key == 'title.akas.tsv.gz':
                 decompress_and_rename(config.zip_paths['input'] + key, 'aka.tsv', config.zip_paths['output'])
             else:
-                print(f"Unknown key: {key}")
+                continue
 
     else:
         print(f"No need to download.")

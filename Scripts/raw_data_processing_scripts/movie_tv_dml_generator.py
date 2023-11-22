@@ -14,7 +14,7 @@ Description:    This script reads every line from the data.tsv file
 """
 
 import pandas as pd
-from ... import config
+from ....EntertainmentDB import config
 
 IMDB_DATASET_PATH = config.data_file_path['production_dataset_path']
 OUTPUT_FOLDER = config.output_file_path['production_output_path']

@@ -7,12 +7,12 @@ Description:    This tool runs a sequence of script which achieve together
 """
 
 import subprocess
-import setup
+import environment_setup
 import config
 
 def main():
     
-    setup.setup()
+    environment_setup.setup()
 
     try:
         for script in config.scripts_to_run:

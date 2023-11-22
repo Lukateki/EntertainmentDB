@@ -15,3 +15,8 @@ Set operations such as intersect, union, and difference are implemented, compari
 
 # Implementation Issues
 For the implementation of the DML's we started using APIs to get the data, unfortunately while iterating through these large API's we were rate limited and needed to change our approach. For this reason, we decided to use publicly distributed data sets and used scripts to populate the database more effectively.
+
+# Requirements to run the raw data scripts
+Before running this application, ensure you have MySQL installed and configured.
+Create a MySQL a database for this application.
+If needed, edit connection configurations in the db_config in the config.py file.
