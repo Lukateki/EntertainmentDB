@@ -1,5 +1,10 @@
 # EntertainmentDB
+
 ## Team 15
+
+## Github
+https://github.com/Lukateki/EntertainmentDB
+
 ## Members:
 - Joseph Pagliuca 40092947
 - Fadi Nimer 40183225
