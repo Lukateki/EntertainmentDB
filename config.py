@@ -11,7 +11,8 @@ data_file_path = {
     'person_dataset_path' : './Data/person.tsv',
     'anime_dataset_path' : './Data/anime.tsv',
     'aka_dataset_path' : './Data/aka.tsv',
-    'country_code_dataset_path' : './Data/country_code_to_name.csv'
+    'country_code_dataset_path' : './Data/country_code_to_name.csv',
+    'country_language_dataset_path' : './Data/countries-languages.csv'
 }
 
 output_file_path = {
@@ -26,6 +27,8 @@ tsv_download_link = [
     'https://datasets.imdbws.com/name.basics.tsv.gz',
     'https://github.com/practical-jupyter/sample-data/archive/refs/heads/master.zip',
     'https://datasets.imdbws.com/title.akas.tsv.gz'
+    'https://datahub.io/core/country-list#resource-country-list_zip'
+    #'https://raw.githubusercontent.com/JovianHQ/opendatasets/master/data/countries-languages-spoken/countries-languages.csv'
 ]
 
 zip_paths = {

@@ -37,7 +37,7 @@ def generate_movie_tv_dml(dataset_path, output_folder, sql_file_prefix, batch_si
                 # Insert query for Entertainment table
                 insert_entertainment_query = f"""
                     INSERT INTO Entertainment (type, title, release_year)
-                    VALUES ('{'TV Show' if title_type in ['tvseries', 'tvshow'] else 'Movie'}', '{title}', {release_year});
+                    VALUES ('{'TV Show' if title_type in ['tvseries', 'tvshow', 'tvEpisode', 'tvSeries', 'tvShort', 'tvMiniSeries' ,'tvSpecial'] else 'Movie'}', '{title}', {release_year});
                     SET @last_entertainement_id = LAST_INSERT_ID();
                 """
                 sql_file.write(insert_entertainment_query + '\n')

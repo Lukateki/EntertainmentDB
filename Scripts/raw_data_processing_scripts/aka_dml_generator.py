@@ -1,83 +1,216 @@
-import pandas as pd
+"""
+Author: Fadi Nimer
+Date: November 20, 2023
+Description:    This script reads every line from the data.tsv file 
+                found in the name.basics.tsv.gz. It parses each line 
+                and dynamically generates insert queries as it 
+                communicates with the database to ensure the insertions
+                are consistent with the data already available. These 
+                insert queries are generated into separate .sql files.
+                The script creates a new output file for every 50,000
+                rows it processes
+
+                Note that some IDEs from which these .sql files can 
+                be run can't handle large files and crash. It is, then,
+                recommended to keep the batch size at 50,000
+"""
+
 import mysql.connector
+from sqlalchemy import create_engine
+import pandas as pd
+import re
 
-# Your database connection details
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '',
-    'database': 'MyEntertainments',
-    'port': 3306
-}
+def generate_aka_dml(db_config, data_file_path, output_file_path, sql_file_prefix, batch_size):
+    engine = create_engine(f"mysql+mysqlconnector://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['database']}")
 
-# Establish the database connection
-database_connection = mysql.connector.connect(**db_config)
+    # Connect to DB
+    database_connection = mysql.connector.connect(**db_config)
 
-TITLE_AKAS_DATASET_PATH = 'title.akas.tsv'  # Replace with the actual path to the file
-OUTPUT_FOLDER = '.'
-SQL_FILE_PREFIX = 'output_akas'
-BATCH_SIZE = 50000
+    # Extract raw data from TSV
+    df_aka = pd.read_csv(data_file_path['aka_dataset_path'], sep='\t', low_memory=False)
 
-# Read the title.akas.tsv file into a Pandas DataFrame
-df_title_akas = pd.read_csv(TITLE_AKAS_DATASET_PATH, sep='\t', low_memory=False)
+    batch_counter_aka = 1
+    output_file_path_aka = f'{output_file_path}/{sql_file_prefix}_{batch_counter_aka}.sql'
 
-# Create the output folder if it doesn't exist
-import os
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    country_codes_df = pd.read_csv(data_file_path['country_code_dataset_path'])
+    country_languages_df = pd.read_csv(data_file_path['country_language_dataset_path'])
+    
+    with open(output_file_path_aka, 'w', encoding='utf-8') as sql_file_aka:
+        for index, row_aka in df_aka.iterrows():
+            title_id = str(row_aka['titleId'])
+            keyword = str(row_aka['title']).replace("'", "''")
+            country_code = str(row_aka['region'])
+            language = str(row_aka['language'])
 
-# Initialize a counter for the batch
-batch_counter_title_akas = 1
+            print(f"{country_code}")
 
-# Process the data in batches
-for start_index in range(0, len(df_title_akas), BATCH_SIZE):
-    end_index = start_index + BATCH_SIZE
-    batch_df_title_akas = df_title_akas.iloc[start_index:end_index]
+            # readjust country codes found in aka.tsv to be found in country_code_to_name.csv
+            if country_code in ['\\N', 'XKO', 'XSI', 'XAS', 'XPI', 'GL']: # ignore
+                continue
+            if country_code == 'XWW':
+                country_code = 'US'
+            if country_code == 'XEU':
+                country_code = 'GB'
+            if country_code in ['XYU', 'YUCS']:
+                country_code = 'MK'
+            if country_code == 'CSHH':
+                country_code = 'CZ'
+            if country_code == 'SUHH':
+                country_code = 'RU'
+            if country_code in ['XWG', 'DDDE']:
+                country_code = 'DE'
+            if country_code == 'HK':
+                country_code = 'CN'
+            if country_code == 'XSA':
+                country_code = 'ES'
+            if country_code == 'PR': # puerto rico is not a country, it's part of US, but replaced to Dominican Republic for language
+                country_code = 'DO'
+            if country_code == 'BUMM':
+                country_code = 'MM'
+            
 
-    # Open the SQL file for writing
-    output_file_path_title_akas = f'{OUTPUT_FOLDER}/{SQL_FILE_PREFIX}_{batch_counter_title_akas}.sql'
-    with open(output_file_path_title_akas, 'w', encoding='utf-8') as sql_file_title_akas:
-        for index, row_title_akas in batch_df_title_akas.iterrows():
-            title_id = str(row_title_akas['titleId'])
-            country_code = str(row_title_akas['region']).replace("'", "''")
+            # Insert query for Keyword table
+            insert_aka_query = f"""
+                INSERT IGNORE INTO KEYWORD (keyword_name)
+                VALUES ('{keyword}');
+                SET @last_aka_id = LAST_INSERT_ID();
+            """
+            sql_file_aka.write(insert_aka_query + '\n')
 
-            # Use an external source to map country code to country name (Replace 'country_code_to_name.csv' with the actual file)
-            country_code_to_name_df = pd.read_csv('country_code_to_name.csv')
-            country_name = country_code_to_name_df.loc[country_code_to_name_df['Code'] == country_code, 'Name'].values[0]
+            # from country_code find the country_name from csv
+            country_name = str(country_codes_df.loc[country_codes_df['Code'] == country_code, 'Name'].values[0])
+            print(f"{country_name}")
 
-            # Insert query for Country table (if not exists)
+            # readjust country names found in country_code_to_name.csv to be found in countries-languages.csv
+            if country_name == 'Russian Federation':
+                country_name = 'Russia'
+            if country_name == 'Syrian Arab Republic':
+                country_name = 'Syria'
+            if country_name == 'Palestine, State of':
+                country_name = 'Palestinian State (proposed)'
+            if country_name == 'Macedonia, the Former Yugoslav Republic of':
+                country_name = 'Macedonia'
+            if country_name == 'Venezuela, Bolivarian Republic of':
+                country_name = 'Venezuela'
+            if country_name == 'Taiwan, Province of China':
+                country_name = 'Taiwan'
+            if country_name == 'Iran, Islamic Republic of':
+                country_name = 'Iran'
+            if country_name == 'Viet Nam':
+                country_name = 'Vietnam'
+            if country_name == 'Korea, Republic of':
+                country_name = 'Korea, South'
+            if country_name == 'Bolivia, Plurinational State of':
+                country_name = 'Bolivia'
+            if country_name == 'Korea, Democratic People\'s Republic of':
+                country_name = 'Korea, North'
+
             insert_country_query = f"""
-                INSERT IGNORE INTO Country (country_name, country_code)
-                VALUES ('{country_name}', '{country_code}');
+                INSERT IGNORE INTO COUNTRY (country_name, country_code)
+                VALUES ('{country_name}','{country_code}');
+                SET @last_country_id = LAST_INSERT_ID();
             """
-            sql_file_title_akas.write(insert_country_query + '\n')
 
-            # Insert query for MovieCountry, TVShowCountry, AnimeCountry tables
-            insert_movie_country_query = f"""
-                INSERT INTO MovieCountry (movie_id, country_id)
-                SELECT movie_id, (SELECT country_id FROM Country WHERE country_code = '{country_code}')
-                FROM Movie
-                WHERE imdb_id = '{title_id}';
+            print(f"{country_name}")
+
+            sql_file_aka.write(insert_country_query + '\n')
+
+            print(f"{country_name}")
+
+            # from country_name find the language if language is NA in aka tsv
+            languages = str(country_languages_df.loc[country_languages_df['Country'] == country_name, 'Languages Spoken'].values[0])
+
+            print(f"{country_name}")
+            print(f"{languages}")
+
+            language_end_markers = [
+                "and", "or", "official", "officially", "widely", "spoken", "including", "among", "dialects"
+            ]
+
+            # Split the input string by commas, semicolons, and other separators
+            language_list = re.split(r'[;,]', languages)
+
+            # Initialize an empty list to store the extracted language names
+            extracted_languages = []
+
+            for language in language_list:
+                # Split the language string by spaces
+                words = language.strip().split()
+
+                # Initialize a list to store the filtered words
+                filtered_words = []
+
+                for word in words:
+                    # Check if the word is not a common language end marker
+                    if word.lower() not in language_end_markers:
+                        # Remove any parentheses and percentages
+                        word = re.sub(r'[\(\[].*?[\)\]]', '', word)
+                        word = re.sub(r'\d+%', '', word)
+
+                        # Append the filtered word to the list
+                        filtered_words.append(word)
+
+                # Join the filtered words to form a language name
+                extracted_language = ' '.join(filtered_words).strip()
+
+                # Ensure the extracted language is not empty
+                if extracted_language:
+                    extracted_languages.append(extracted_language)
+
+            # Return the primary language (the first extracted language)
+            if extracted_languages:
+                language = extracted_languages[0]
+            else:
+                language = None
+            print(f"{language}")
+
+            insert_language_query = f"""
+                INSERT IGNORE INTO LANGUAGE (language_name)
+                VALUES ('{language}');
+                SET @last_lang_id = LAST_INSERT_ID();
             """
-            sql_file_title_akas.write(insert_movie_country_query + '\n')
+            sql_file_aka.write(insert_language_query + '\n')
 
-            insert_tv_show_country_query = f"""
-                INSERT INTO TVShowCountry (tv_show_id, country_id)
-                SELECT tv_show_id, (SELECT country_id FROM Country WHERE country_code = '{country_code}')
-                FROM TV_Show
-                WHERE imdb_id = '{title_id}';
+            title_type_query = f"""
+                SELECT type, production_id FROM (
+                    SELECT 'Movie' AS type, movie_id AS production_id FROM Movie WHERE imdb_id = '{title_id}' 
+                    UNION 
+                    SELECT 'TV_Show' AS type, tv_show_id AS production_id FROM TV_Show WHERE imdb_id = '{title_id}'
+                    UNION
+                    SELECT 'Anime' AS type, anime_id AS production_id FROM Anime WHERE mal_id = '{title_id}'
+                ) AS title_type_query;
             """
-            sql_file_title_akas.write(insert_tv_show_country_query + '\n')
+            title_type_result = pd.read_sql(title_type_query, con=engine)
+            print(f"{title_type_result}")
 
-            insert_anime_country_query = f"""
-                INSERT INTO AnimeCountry (anime_id, country_id)
-                SELECT anime_id, (SELECT country_id FROM Country WHERE country_code = '{country_code}')
-                FROM Anime
-                WHERE mal_id = '{title_id}';
-            """
-            sql_file_title_akas.write(insert_anime_country_query + '\n')
+            if not title_type_result.empty:
+                    title_type = title_type_result['type'].iloc[0]
+                    production_id = title_type_result['production_id'].iloc[0]
 
-    print(f"Batch {batch_counter_title_akas}: SQL queries generated and saved to {output_file_path_title_akas}")
-    batch_counter_title_akas += 1
+                    # Insert into respective table (MovieKeyword, TVShowKeyword, AnimeKeyword, MovieLanguage, TVShowLanguage, AnimeLanguage, MovieCountry, TVShowCountry, AnimeCountry) with INSERT IGNORE
+                    insert_query = f"""
+                        INSERT IGNORE INTO {title_type.capitalize()}Keyword ({title_type.lower()}_id, keyword_id)
+                        VALUES ({production_id}, @last_aka_id);
+                    """
+                    sql_file_aka.write(insert_query + '\n')
 
-# Close the database connection
-database_connection.close()
+                    insert_query = f"""
+                        INSERT IGNORE INTO {title_type.capitalize()}Country ({title_type.lower()}_id, country_id)
+                        VALUES ({production_id}, @last_country_id);
+                    """
+                    sql_file_aka.write(insert_query + '\n')
+
+                    insert_query = f"""
+                        INSERT IGNORE INTO {title_type.capitalize()}Language ({title_type.lower()}_id, language_id)
+                        VALUES ({production_id}, @last_lang_id);
+                    """
+                    sql_file_aka.write(insert_query + '\n')
+
+            if index > 0 and index % batch_size == 0:
+                print(f"Batch {batch_counter_aka} processed.")
+                batch_counter_aka += 1
+                output_file_path_aka = f'{output_file_path}/{sql_file_prefix}_{batch_counter_aka}.sql'
+                sql_file_aka.close()
+                sql_file_aka = open(output_file_path_aka, 'w', encoding='utf-8')
+
+    database_connection.close()

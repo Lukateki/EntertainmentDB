@@ -122,6 +122,14 @@ CREATE TABLE IF NOT EXISTS MovieCreator (
     FOREIGN KEY (creator_id) REFERENCES Creator(creator_id)
 );
 
+CREATE TABLE IF NOT EXISTS MovieArtist (
+	movie_id  INT,
+	artist_id INT,
+	PRIMARY KEY (movie_id , artist_id),
+    FOREIGN KEY (movie_id ) REFERENCES Movie(movie_id ),
+    FOREIGN KEY (artist_id) REFERENCES Artist(artist_id)
+);
+
 CREATE TABLE IF NOT EXISTS MovieGenre (
     movie_id INT,
     genre_id INT,
@@ -164,10 +172,10 @@ CREATE TABLE IF NOT EXISTS TVShowCreator (
 
 CREATE TABLE IF NOT EXISTS TVShowDirector (
     tv_show_id  INT,
-    actor_id INT,
-    PRIMARY KEY (tv_show_id , actor_id),
+    director_id INT,
+    PRIMARY KEY (tv_show_id , director_id),
     FOREIGN KEY (tv_show_id ) REFERENCES TV_Show(tv_show_id ),
-    FOREIGN KEY (actor_id) REFERENCES Actor(actor_id)
+    FOREIGN KEY (director_id) REFERENCES Director(director_id)
 );
 
 CREATE TABLE IF NOT EXISTS TVShowActor (
@@ -176,6 +184,14 @@ CREATE TABLE IF NOT EXISTS TVShowActor (
     PRIMARY KEY (tv_show_id , actor_id),
     FOREIGN KEY (tv_show_id ) REFERENCES TV_Show(tv_show_id ),
     FOREIGN KEY (actor_id) REFERENCES Actor(actor_id)
+);
+
+CREATE TABLE IF NOT EXISTS TVShowArtist (
+    tv_show_id  INT,
+    artist_id INT,
+    PRIMARY KEY (tv_show_id , artist_id),
+    FOREIGN KEY (tv_show_id ) REFERENCES TV_Show(tv_show_id ),
+    FOREIGN KEY (artist_id) REFERENCES Artist(artist_id)
 );
 
 CREATE TABLE IF NOT EXISTS TVShowGenre (

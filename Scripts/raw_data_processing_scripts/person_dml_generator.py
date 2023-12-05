@@ -35,6 +35,8 @@ def generate_person_dml(db_config, data_file_path, output_file_path, sql_file_pr
         for index, row_person in df_person.iterrows():
             imdb_person_id = str(row_person['nconst'])
             person_name = str(row_person['primaryName']).replace("'", "''")
+            professions = str(row_person['primaryProfession']).split(',')
+            print(f"{professions}")
 
             # Insert query for Person table
             insert_person_query = f"""
@@ -45,39 +47,49 @@ def generate_person_dml(db_config, data_file_path, output_file_path, sql_file_pr
             sql_file_person.write(insert_person_query + '\n')
 
             # Insert queries for Actor, Director, Creator, Author, Artist tables
-            for profession in str(row_person['primaryProfession']).split(','):
+            for profession in professions:
+                if profession.lower() in ['actress']:
+                    profession = 'actor'
+                if profession.lower() in ['soundtrack', 'make_up_department', 'music_department', 'composer', 'music_artist']:
+                    profession = 'artist'
+                if profession.lower() in ['producer', 'writer']:
+                    profession = 'creator'
+                
                 if profession.lower() in ['actor', 'director', 'creator', 'author', 'artist']:
                     table_name = profession.capitalize()
+                    print(f"{table_name}")
                     insert_query = f"""
                         INSERT IGNORE INTO {table_name} (person_id)
                         VALUES (@last_person_id);
+                        SET @last_profession_id = LAST_INSERT_ID();
                     """
                     sql_file_person.write(insert_query + '\n')
 
-            # Insert queries for MovieActor, MovieDirector, MovieCreator, TVShowCreator, TVShowDirector, TVShowActor tables
-            for title_id in str(row_person['knownForTitles']).split(','):
-                # Determine the type (Movie, TV_Show, Anime)
-                title_type_query = f"""
-                    SELECT type, production_id FROM (
-                        SELECT 'Movie' AS type, movie_id AS production_id FROM Movie WHERE imdb_id = '{title_id}' 
-                        UNION 
-                        SELECT 'TV_Show' AS type, tv_show_id AS production_id FROM TV_Show WHERE imdb_id = '{title_id}'
-                        UNION
-                        SELECT 'Anime' AS type, anime_id AS production_id FROM Anime WHERE mal_id = '{title_id}'
-                    ) AS title_type_query;
-                """
-                title_type_result = pd.read_sql(title_type_query, con=engine)
+                    # Insert queries for MovieActor, MovieDirector, MovieCreator, TVShowCreator, TVShowDirector, TVShowActor tables
+                    for title_id in str(row_person['knownForTitles']).split(','):
+                        # Determine the type (Movie, TV_Show, Anime)
+                        title_type_query = f"""
+                            SELECT type, production_id FROM (
+                                SELECT 'Movie' AS type, movie_id AS production_id FROM Movie WHERE imdb_id = '{title_id}' 
+                                UNION 
+                                SELECT 'TV_Show' AS type, tv_show_id AS production_id FROM TV_Show WHERE imdb_id = '{title_id}'
+                                UNION
+                                SELECT 'Anime' AS type, anime_id AS production_id FROM Anime WHERE mal_id = '{title_id}'
+                            ) AS title_type_query;
+                        """
+                        title_type_result = pd.read_sql(title_type_query, con=engine)
+                        print(f"{title_type_result}")
 
-                if not title_type_result.empty:
-                    title_type = title_type_result['type'].iloc[0]
-                    production_id = title_type_result['production_id'].iloc[0]
+                        if not title_type_result.empty:
+                            title_type = title_type_result['type'].iloc[0]
+                            production_id = title_type_result['production_id'].iloc[0]
 
-                    # Insert into respective table (MovieActor, MovieDirector, MovieCreator, TVShowCreator, TVShowDirector, TVShowActor) with INSERT IGNORE
-                    insert_query = f"""
-                        INSERT IGNORE INTO {title_type}{"Actor" if title_type != "Anime" else "Creator"} ({title_type.lower()}_id, {"actor" if title_type != "Anime" else "creator"}_id)
-                        VALUES ({production_id}, @last_person_id);
-                    """
-                    sql_file_person.write(insert_query + '\n')
+                            # Insert into respective table (MovieActor, MovieDirector, MovieCreator, TVShowCreator, TVShowDirector, TVShowActor) with INSERT IGNORE
+                            insert_query = f"""
+                                INSERT IGNORE INTO {title_type}{table_name} ({title_type.lower()}_id, {table_name.lower()}_id)
+                                VALUES ({production_id}, @last_profession_id);
+                            """
+                            sql_file_person.write(insert_query + '\n')
 
             if index > 0 and index % batch_size == 0:
                 print(f"Batch {batch_counter_person} processed.")

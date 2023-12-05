@@ -21,10 +21,15 @@ def populate(sql_files_directory, db_config):
                 with open(file_path, 'r', encoding='utf-8') as sql_file:
                     queries = sql_file.read().split(';')
 
+                    print(f"Processing : {filename}")
+
+                    count = 0
+
                     for query in queries:
+                        count = count + 1
                         try:
                             cursor.execute(query)
-                            print(f"Executed query: {query}")
+                            print(f"From {filename}, executing query {count}: {query}")
 
                             # Ignore results
                             for _ in cursor.fetchall():

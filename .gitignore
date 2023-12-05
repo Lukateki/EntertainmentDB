@@ -1,6 +1,7 @@
 # Ignore data files
 /Data/*
 !/Data/country_code_to_name.csv
+!/Data/countries-languages.csv
 !/Data/zip/
 /Data/zip/*
 
